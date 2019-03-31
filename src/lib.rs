@@ -47,10 +47,7 @@ impl HTMLayer {
                 .choose_multiple(&mut rand::thread_rng(), potential_radius)
                 .map(|&synapse_i| synapse_i)
                 .collect();
-            let mut half_vec = Vec::new();
-            for i in 0..connected_synapses.len() {
-                half_vec.push(0.5f32);
-            }
+            let mut half_vec = vec![0.5; connected_synapses.len()];
             let connected_synapses = connected_synapses.iter()
                 .zip(half_vec)
                 .map(|(i, p)| (*i, p)).collect();
