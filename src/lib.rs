@@ -39,7 +39,9 @@ impl HTMLayer {
 
                stimulus_threshold: f32,) -> Self {
 
-        // Initialize columns with `potential_radius` random connections
+        // Initialize columns with
+        // `potential_radius` random connections.
+        // 0.5 permanence and boost.
         let mut columns = Vec::new();
 
         for i in 0..columns_length {
