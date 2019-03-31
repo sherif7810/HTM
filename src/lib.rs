@@ -95,7 +95,7 @@ impl HTMLayer {
             let min_local_activity = {
                 let neighbors = self.neighors(i);
                 let mut local_overlap = Vec::new();
-                neighbors.iter().map(|&i| if overlap[i] > 0. { local_overlap.push(overlap[i]); });
+                neighbors.iter().for_each(|&i| if overlap[i] > 0. { local_overlap.push(overlap[i]); });
                 local_overlap.sort_by(|a, b| a.partial_cmp(b).unwrap()); // Can't sort floats.
 
                 local_overlap[local_overlap.len() - self.num_active_columns_per_inhibition_area]
