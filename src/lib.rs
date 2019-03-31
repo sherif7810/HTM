@@ -91,6 +91,8 @@ impl HTMLayer {
         for i in 0..self.columns_length {
             let min_local_activity = {
                 let neighbors = self.neighors(i);
+                
+                // kthScore
                 let mut local_overlap = Vec::new();
                 neighbors.iter().for_each(|&i| if overlap[i] > 0. { local_overlap.push(overlap[i]); });
                 local_overlap.sort_by(|a, b| a.partial_cmp(b).unwrap()); // Can't sort floats.
