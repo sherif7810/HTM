@@ -4,7 +4,7 @@ use bit_vec::BitVec;
 use rand::seq::SliceRandom;
 
 pub struct HTMLayer {
-    ip_length: usize,
+    input_length: usize,
     columns_length: usize,
     num_active_columns_per_inhibition_area: usize,
     inhibition_radius: usize, // Local inhibition
@@ -27,11 +27,10 @@ pub struct Column {
 }
 
 impl HTMLayer {
-    pub fn new(ip_length: usize, columns_length: usize,
+    pub fn new(input_length: usize, columns_length: usize,
                num_active_columns_per_inhibition_area: usize,
                inhibition_radius: usize,
 
-               columns: Vec<Column>,
                potential_radius: usize,
 
                permanence_threshold: f32,
@@ -45,7 +44,7 @@ impl HTMLayer {
         let mut columns = Vec::new();
 
         for i in 0..columns_length {
-            let connected_synapses: Vec<usize> = (0..ip_length).collect::<Vec<usize>>()
+            let connected_synapses: Vec<usize> = (0..input_length).collect::<Vec<usize>>()
                 .choose_multiple(&mut rand::thread_rng(), potential_radius)
                 .map(|&synapse_i| synapse_i)
                 .collect();
@@ -62,7 +61,7 @@ impl HTMLayer {
 
 
         HTMLayer {
-            ip_length: ip_length,
+            input_length: input_length,
             columns_length: columns_length,
             num_active_columns_per_inhibition_area: num_active_columns_per_inhibition_area,
             inhibition_radius: inhibition_radius,
