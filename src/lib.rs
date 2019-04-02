@@ -1,5 +1,6 @@
 use bit_vec::BitVec;
 use rand::seq::SliceRandom;
+use std::rc::Rc;
 
 /// Hierarchical temporal memory (HTM) layer.
 pub struct HTMLayer {
@@ -81,13 +82,13 @@ impl HTMLayer {
             stimulus_threshold,
         }
     }
-    pub fn spatial_pooling(&mut self, input: BitVec) {
+    pub fn spatial_pooling(&mut self, input: BitVec) -> Vec<usize> {
         // Overlap
         let mut overlap = Vec::new();
         for i in 0..self.columns_length {
             overlap.push(0.);
-            for (_, permanence) in &self.columns[i].connected_synapses {
-                if *permanence > self.permanence_threshold { overlap[i] += 1.; }
+            for (input_bit_index, _) in &self.columns[i].connected_synapses {
+                if input[*input_bit_index] == true { overlap[i] += 1.; }
             }
             overlap[i] *= self.columns[i].boost;
         }
@@ -115,7 +116,7 @@ impl HTMLayer {
         let permanence_threshold = self.permanence_threshold;
         let permanence_increment = self.permanence_increment;
         let permanence_decrement = self.permanence_decrement;
-        for i in active_columns_indices {
+        for &i in &active_columns_indices {
             for (_, mut p) in &mut self.columns[i].connected_synapses {
                 if p > permanence_threshold {
                     p += permanence_increment;
@@ -131,7 +132,8 @@ impl HTMLayer {
             }
 
         }
-        unimplemented!();
+
+        active_columns_indices
     }
 
     fn neighors(&self, i: usize) -> Vec<usize> {
