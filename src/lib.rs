@@ -1,8 +1,7 @@
-use std::mem;
-
 use bit_vec::BitVec;
 use rand::seq::SliceRandom;
 
+/// Hierarchical temporal memory (HTM) layer.
 pub struct HTMLayer {
     input_length: usize,
     columns_length: usize,
@@ -43,12 +42,12 @@ impl HTMLayer {
         // 0.5 permanence and boost.
         let mut columns = Vec::new();
 
-        for i in 0..columns_length {
+        for _ in 0..columns_length {
             let connected_synapses: Vec<usize> = (0..input_length).collect::<Vec<usize>>()
                 .choose_multiple(&mut rand::thread_rng(), potential_radius)
                 .map(|&synapse_i| synapse_i)
                 .collect();
-            let mut half_vec = vec![0.5; connected_synapses.len()];
+            let half_vec = vec![0.5; connected_synapses.len()];
             let connected_synapses = connected_synapses.iter()
                 .zip(half_vec)
                 .map(|(i, p)| (*i, p)).collect();
@@ -60,7 +59,7 @@ impl HTMLayer {
         }
 
 
-        HTMLayer {
+        Self {
             input_length: input_length,
             columns_length: columns_length,
             num_active_columns_per_inhibition_area: num_active_columns_per_inhibition_area,
@@ -92,7 +91,7 @@ impl HTMLayer {
         for i in 0..self.columns_length {
             let min_local_activity = {
                 let neighbors = self.neighors(i);
-                
+
                 // kthScore
                 let mut local_overlap = Vec::new();
                 neighbors.iter().for_each(|&i| if overlap[i] > 0. { local_overlap.push(overlap[i]); });
