@@ -59,26 +59,26 @@ impl HTMLayer {
                 .map(|(i, p)| (*i, p)).collect();
 
             columns.push(Column {
-                connected_synapses: connected_synapses,
+                connected_synapses,
                 boost: 0.5
             });
         }
 
 
         Self {
-            input_length: input_length,
-            columns_length: columns_length,
-            num_active_columns_per_inhibition_area: num_active_columns_per_inhibition_area,
-            inhibition_radius: inhibition_radius,
+            input_length,
+            columns_length,
+            num_active_columns_per_inhibition_area,
+            inhibition_radius,
 
-            columns: columns,
-            potential_radius: potential_radius,
+            columns,
+            potential_radius,
 
-            permanence_threshold: permanence_threshold,
-            permanence_increment: permanence_increment,
-            permanence_decrement: permanence_decrement,
+            permanence_threshold,
+            permanence_increment,
+            permanence_decrement,
 
-            stimulus_threshold: stimulus_threshold,
+            stimulus_threshold,
         }
     }
     pub fn spatial_pooling(&mut self, input: BitVec) {
