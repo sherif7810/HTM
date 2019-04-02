@@ -5,8 +5,10 @@ use rand::seq::SliceRandom;
 pub struct HTMLayer {
     input_length: usize,
     columns_length: usize,
+    /// Global inhibition.
     num_active_columns_per_inhibition_area: usize,
-    inhibition_radius: usize, // Local inhibition
+    /// Local inhibition.
+    inhibition_radius: usize,
 
     columns: Vec<Column>,
     potential_radius: usize,
@@ -19,9 +21,13 @@ pub struct HTMLayer {
 
 }
 
+/// A cortical column.
+/// It connects to `HTMLayer`'s input with `potential_radius` synapses.
 #[derive(Clone)]
 pub struct Column {
+    /// Each synapse has a permanence value.
     connected_synapses: Vec<(usize, f32)>,
+    /// It's used for learning.
     boost: f32
 }
 
