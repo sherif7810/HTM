@@ -24,12 +24,13 @@ pub struct HTMLayer {
 
 /// A cortical column.
 /// It connects to `HTMLayer`'s input with `potential_radius` synapses.
-#[derive(Clone)]
-pub struct Column {
+struct Column {
     /// Each synapse has a permanence value.
     connected_synapses: Vec<(usize, f32)>,
     /// It's used for learning.
-    boost: f32
+    boost: f32,
+
+    active_duty_cycle: f32
 }
 
 impl HTMLayer {
@@ -61,7 +62,8 @@ impl HTMLayer {
 
             columns.push(Column {
                 connected_synapses,
-                boost: 0.5
+                boost: 0.5,
+                active_duty_cycle: 0.0
             });
         }
 
@@ -82,7 +84,7 @@ impl HTMLayer {
             stimulus_threshold,
         }
     }
-    pub fn spatial_pooling(&mut self, input: BitVec) -> Vec<usize> {
+    pub fn spatial_pooling_output(&self, input: BitVec) -> Vec<usize> {
         // Overlap
         let mut overlap = Vec::new();
         for i in 0..self.columns_length {
@@ -112,6 +114,12 @@ impl HTMLayer {
             }
         }
 
+        active_columns_indices
+    }
+
+    pub fn spatial_pooling_learning(&mut self, input: BitVec) {
+        let active_columns_indices = self.spatial_pooling_output(input);
+
         // Learning
         let permanence_threshold = self.permanence_threshold;
         let permanence_increment = self.permanence_increment;
@@ -132,8 +140,6 @@ impl HTMLayer {
             }
 
         }
-
-        active_columns_indices
     }
 
     fn neighors(&self, i: usize) -> Vec<usize> {
@@ -141,5 +147,10 @@ impl HTMLayer {
         neighbors_indices.append(&mut (i - self.inhibition_radius..i - 1).collect::<Vec<usize>>());
         neighbors_indices.append(&mut (i + 1..i + self.inhibition_radius).collect::<Vec<usize>>());
         neighbors_indices
+    }
+
+    pub fn new_duty_cycle(&mut self, input: BitVec, period: f32) {
+        assert!(period >= 1.0);
+
     }
 }
