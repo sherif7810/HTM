@@ -154,8 +154,13 @@ impl HTMLayer {
         neighbors_indices
     }
 
-    fn new_duty_cycle(&mut self, input: BitVec, period: f32) {
+    fn update_active_duty_cycle(&mut self, input: BitVec, period: f32) {
         assert!(period >= 1.0);
+        unimplemented!();
+    }
 
+    fn update_overlap_duty_cycle(&mut self, input: BitVec, period: f32) {
+        assert!(period >= 1.0);
+        unimplemented!();
     }
 }
