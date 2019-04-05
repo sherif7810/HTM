@@ -84,7 +84,7 @@ impl HTMLayer {
             stimulus_threshold,
         }
     }
-    pub fn spatial_pooling_output(&self, input: BitVec) -> Vec<usize> {
+    pub fn spatial_pooling_output(&self, input: BitVec) -> BitVec {
         // Overlap
         let mut overlap = Vec::new();
         for i in 0..self.columns_length {
@@ -96,7 +96,7 @@ impl HTMLayer {
         }
 
         // Winning columns after inhibition
-        let mut active_columns_indices = Vec::new();
+        let mut active_columns = BitVec::new();
         for i in 0..self.columns_length {
             let min_local_activity = {
                 let neighbors = self.neighors(i);
@@ -110,21 +110,26 @@ impl HTMLayer {
             };
 
             if overlap[i] > self.stimulus_threshold  && overlap[i] > min_local_activity {
-                active_columns_indices.push(i);
+                active_columns.push(true);
+            } else {
+                active_columns.push(false);
             }
         }
 
-        active_columns_indices
+        active_columns
     }
 
     pub fn spatial_pooling_learning(&mut self, input: BitVec) {
-        let active_columns_indices = self.spatial_pooling_output(input);
+        let active_columns_indices: Vec<usize> = self.spatial_pooling_output(input).iter()
+            .enumerate()
+            .map(|(i, _)| i)
+            .collect();
 
         // Learning
         let permanence_threshold = self.permanence_threshold;
         let permanence_increment = self.permanence_increment;
         let permanence_decrement = self.permanence_decrement;
-        for &i in &active_columns_indices {
+        for i in active_columns_indices {
             for (_, mut p) in &mut self.columns[i].connected_synapses {
                 if p > permanence_threshold {
                     p += permanence_increment;
@@ -149,7 +154,7 @@ impl HTMLayer {
         neighbors_indices
     }
 
-    pub fn new_duty_cycle(&mut self, input: BitVec, period: f32) {
+    fn new_duty_cycle(&mut self, input: BitVec, period: f32) {
         assert!(period >= 1.0);
 
     }
