@@ -20,6 +20,8 @@ pub struct HTMLayer {
 
     stimulus_threshold: f32,
 
+    period: i32
+
 }
 
 /// A cortical column.
@@ -30,7 +32,8 @@ struct Column {
     /// It's used for learning.
     boost: f32,
 
-    active_duty_cycle: f32
+    active_duty_cycle: f32,
+    overlap_duty_cycle: f32
 }
 
 impl HTMLayer {
@@ -43,7 +46,11 @@ impl HTMLayer {
                permanence_threshold: f32,
                permanence_increment: f32, permanence_decrement: f32,
 
-               stimulus_threshold: f32,) -> Self {
+               stimulus_threshold: f32,
+               
+               period: i32) -> Self {
+
+        assert!(period >= 1);
 
         // Initialize columns with
         // `potential_radius` random connections.
@@ -63,7 +70,8 @@ impl HTMLayer {
             columns.push(Column {
                 connected_synapses,
                 boost: 0.5,
-                active_duty_cycle: 0.0
+                active_duty_cycle: 0.0,
+                overlap_duty_cycle: 0.0
             });
         }
 
@@ -82,6 +90,8 @@ impl HTMLayer {
             permanence_decrement,
 
             stimulus_threshold,
+
+            period
         }
     }
     pub fn spatial_pooling_output(&self, input: BitVec) -> BitVec {
@@ -119,8 +129,9 @@ impl HTMLayer {
         active_columns
     }
 
-    pub fn spatial_pooling_learning(&mut self, input: BitVec) {
-        let active_columns_indices: Vec<usize> = self.spatial_pooling_output(input).iter()
+    pub fn spatial_pooling_learning(&mut self, input: BitVec, overlap: Vec<f32>) {
+        let active_columns = self.spatial_pooling_output(input);
+        let active_columns_indices: Vec<usize> = active_columns.iter()
             .enumerate()
             .map(|(i, _)| i)
             .collect();
@@ -145,6 +156,10 @@ impl HTMLayer {
             }
 
         }
+
+        self.update_active_duty_cycle(active_columns);
+        self.update_overlap_duty_cycle(overlap);
+        
     }
 
     fn neighors(&self, i: usize) -> Vec<usize> {
@@ -154,13 +169,15 @@ impl HTMLayer {
         neighbors_indices
     }
 
-    fn update_active_duty_cycle(&mut self, input: BitVec, period: f32) {
-        assert!(period >= 1.0);
-        unimplemented!();
+    fn update_active_duty_cycle(&mut self, active_columns: BitVec) {
+        for i in 0..self.columns.len() {
+            self.columns[i].active_duty_cycle = (self.columns[i].active_duty_cycle * (self.period - 1) as f32 + active_columns[i] as u8 as f32) / self.period as f32;
+        }
     }
 
-    fn update_overlap_duty_cycle(&mut self, input: BitVec, period: f32) {
-        assert!(period >= 1.0);
-        unimplemented!();
+    fn update_overlap_duty_cycle(&mut self, overlap: Vec<f32>) {
+        for i in 0..self.columns.len() {
+            self.columns[i].overlap_duty_cycle = (self.columns[i].overlap_duty_cycle * (self.period - 1) as f32 + overlap[i]) / self.period as f32;
+        }
     }
 }
