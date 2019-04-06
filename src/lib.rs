@@ -1,6 +1,5 @@
 use bit_vec::BitVec;
 use rand::seq::SliceRandom;
-use std::rc::Rc;
 
 /// Hierarchical temporal memory (HTM) layer.
 pub struct HTMLayer {
@@ -138,18 +137,15 @@ impl HTMLayer {
             .collect();
 
         // Learning
-        let permanence_threshold = self.permanence_threshold;
-        let permanence_increment = self.permanence_increment;
-        let permanence_decrement = self.permanence_decrement;
         for i in active_columns_indices {
             for (_, mut p) in &mut self.columns[i].connected_synapses {
-                if p > permanence_threshold {
-                    p += permanence_increment;
+                if p > self.permanence_threshold {
+                    p += self.permanence_increment;
                     if p < 1. {
                         p = 1.0;
                     };
                 } else {
-                    p -= permanence_decrement;
+                    p -= self.permanence_decrement;
                     if p > 1. {
                         p = 1.0;
                     }
