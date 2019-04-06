@@ -134,7 +134,7 @@ impl HTMLayer {
             .collect();
 
         // Learning
-        for i in active_columns_indices {
+        for &i in &active_columns_indices {
             for (_, mut p) in &mut self.columns[i].connected_synapses {
                 if p > self.permanence_threshold {
                     p += self.permanence_increment;
@@ -154,6 +154,22 @@ impl HTMLayer {
         self.update_active_duty_cycle(active_columns);
         self.update_overlap_duty_cycle(overlap);
         
+        for &i in &active_columns_indices {
+            let neighbor_mean_active_duty_cycle = {
+                let i_neighbors_duty_cycles = self.neighors(i).iter()
+                    .map(|&i_neighbor_index| self.columns[i_neighbor_index].active_duty_cycle)
+                    .collect::<Vec<f32>>();
+                
+                i_neighbors_duty_cycles.iter().sum::<f32>() / i_neighbors_duty_cycles.len() as f32
+            };
+
+            // BoostFunction
+            self.columns[i].boost = if self.columns[i].active_duty_cycle >= neighbor_mean_active_duty_cycle {
+                self.columns[i].boost + 1.0
+            } else {
+                self.columns[i].boost - 1.0
+            };
+        }
     }
 
     fn neighors(&self, i: usize) -> Vec<usize> {
