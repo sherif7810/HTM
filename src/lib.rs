@@ -57,14 +57,11 @@ impl HTMLayer {
         let mut columns = Vec::new();
 
         for _ in 0..columns_length {
-            let connected_synapses: Vec<usize> = (0..input_length).collect::<Vec<usize>>()
+            let connected_synapses = (0..input_length).collect::<Vec<usize>>()
                 .choose_multiple(&mut rand::thread_rng(), potential_radius)
-                .map(|&synapse_i| synapse_i)
-                .collect();
-            let half_vec = vec![0.5; connected_synapses.len()];
-            let connected_synapses = connected_synapses.iter()
-                .zip(half_vec)
-                .map(|(i, p)| (*i, p)).collect();
+                .zip(vec![0.5; potential_radius])
+                .map(|(&synapse_i, p)| (synapse_i, p))
+                .collect::<Vec<(usize, f32)>>();
 
             columns.push(Column {
                 connected_synapses,
