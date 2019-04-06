@@ -133,6 +133,7 @@ impl HTMLayer {
         let active_columns = self.spatial_pooling_output(input);
         let active_columns_indices: Vec<usize> = active_columns.iter()
             .enumerate()
+            .filter(|(i, active)| *active)
             .map(|(i, _)| i)
             .collect();
 
