@@ -19,7 +19,8 @@ pub struct HTMLayer {
 
     stimulus_threshold: f32,
 
-    period: i32
+    period: i32,
+    min_overlap_duty_cycle: f32
 
 }
 
@@ -47,7 +48,8 @@ impl HTMLayer {
 
                stimulus_threshold: f32,
                
-               period: i32) -> Self {
+               period: i32,
+               min_overlap_duty_cycle: f32) -> Self {
 
         assert!(period >= 1);
 
@@ -87,7 +89,8 @@ impl HTMLayer {
 
             stimulus_threshold,
 
-            period
+            period,
+            min_overlap_duty_cycle
         }
     }
     pub fn spatial_pooling_output(&self, input: BitVec) -> BitVec {
@@ -112,6 +115,7 @@ impl HTMLayer {
                 neighbors.iter().for_each(|&i| if overlap[i] > 0. { local_overlap.push(overlap[i]); });
                 local_overlap.sort_by(|a, b| a.partial_cmp(b).unwrap()); // Can't sort floats.
 
+                println!("{}.", local_overlap.len());
                 local_overlap[local_overlap.len() - self.num_active_columns_per_inhibition_area]
             };
 
@@ -126,10 +130,17 @@ impl HTMLayer {
     }
 
     pub fn spatial_pooling_learning(&mut self, input: BitVec, overlap: Vec<f32>) {
-        let active_columns = self.spatial_pooling_output(input);
-        let active_columns_indices: Vec<usize> = active_columns.iter()
+        let sp_output = self.spatial_pooling_output(input);
+        let active_columns: BitVec = sp_output.iter()
+            .filter(|active| *active)
+            .collect();
+        let columns_indices: Vec<usize> = sp_output.iter()
             .enumerate()
-            .filter(|(i, active)| *active)
+            .map(|(i, _)| i)
+            .collect();
+        let active_columns_indices: Vec<usize> = sp_output.iter()
+            .enumerate()
+            .filter(|(_, active)| *active)
             .map(|(i, _)| i)
             .collect();
 
@@ -154,7 +165,7 @@ impl HTMLayer {
         self.update_active_duty_cycle(active_columns);
         self.update_overlap_duty_cycle(overlap);
         
-        for &i in &active_columns_indices {
+        for &i in &columns_indices {
             let neighbor_mean_active_duty_cycle = {
                 let i_neighbors_duty_cycles = self.neighors(i).iter()
                     .map(|&i_neighbor_index| self.columns[i_neighbor_index].active_duty_cycle)
@@ -169,12 +180,20 @@ impl HTMLayer {
             } else {
                 self.columns[i].boost - 1.0
             };
+
+            // Increase permanence for all connected synapses
+            if self.columns[i].overlap_duty_cycle < self.min_overlap_duty_cycle {
+                for (_, mut p) in &mut self.columns[i].connected_synapses {
+                    p += self.permanence_increment;
+                }
+            }
         }
     }
 
     fn neighors(&self, i: usize) -> Vec<usize> {
         let mut neighbors_indices = Vec::new();
-        neighbors_indices.append(&mut (i - self.inhibition_radius..i - 1).collect::<Vec<usize>>());
+        let rng_min = (i as i32- self.inhibition_radius as i32).abs() as usize;
+        neighbors_indices.append(&mut (rng_min..i).collect::<Vec<usize>>());
         neighbors_indices.append(&mut (i + 1..i + self.inhibition_radius).collect::<Vec<usize>>());
         neighbors_indices
     }
