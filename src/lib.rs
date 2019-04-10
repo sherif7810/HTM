@@ -126,13 +126,12 @@ impl HTMLayer {
             }
         }
 
-        self.spatial_pooling_learning(input, overlap);
+        self.spatial_pooling_learning(&active_columns, overlap);
 
         active_columns
     }
 
-    fn spatial_pooling_learning(&mut self, input: &BitVec, overlap: Vec<f32>) {
-        let sp_output = self.spatial_pooling_output(input);
+    fn spatial_pooling_learning(&mut self, sp_output: &BitVec, overlap: Vec<f32>) {
         let active_columns: Box<BitVec> = Box::new(sp_output.iter()
             .filter(|active| *active)
             .collect());
