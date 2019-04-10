@@ -8,7 +8,14 @@ fn main() {
         ip.push(true);
     }
 
-    let my_layer = HTMLayer::new(ip.len(), 512, 2, 2, 8, 2.0, 2.0, 2.0, 2.0, 4, 2.0);
+    let mut my_layer = HTMLayer::new(ip.len(), 512,
+                                 2, 8, 8,
+                                 2.0, 2.0, 2.0,
+                                 2.0,
+                                 4,2.0);
 
-    my_layer.spatial_pooling_output(ip);
+    let active_columns = my_layer.spatial_pooling_output(&ip);
+    println!("Active columns = {:?}.", active_columns);
+    let active_columns = my_layer.spatial_pooling_output(&ip);
+    println!("Active columns = {:?}.", active_columns);
 }
