@@ -147,7 +147,7 @@ impl HTMLayer {
             .collect());
 
         // Learning
-        for &i in active_columns_indices.iter() {
+        for i in active_columns_indices.into_iter() {
             for (_, mut p) in &mut self.columns[i].connected_synapses {
                 if p > self.permanence_threshold {
                     p += self.permanence_increment;
@@ -167,7 +167,7 @@ impl HTMLayer {
         self.update_active_duty_cycle(*active_columns);
         self.update_overlap_duty_cycle(overlap);
         
-        for &i in columns_indices.iter() {
+        for i in columns_indices.into_iter() {
             let neighbor_mean_active_duty_cycle = {
                 let i_neighbors_duty_cycles = self.neighors(i).iter()
                     .map(|&i_neighbor_index| self.columns[i_neighbor_index].active_duty_cycle)
