@@ -47,7 +47,7 @@ impl HTMLayer {
                permanence_increment: f32, permanence_decrement: f32,
 
                stimulus_threshold: f32,
-               
+
                period: i32,
                min_overlap_duty_cycle: f32) -> Self {
 
@@ -68,7 +68,7 @@ impl HTMLayer {
 
             columns.push(Column {
                 connected_synapses,
-                boost: 0.5,
+                boost: 0.9,
                 active_duty_cycle: 0.0,
                 overlap_duty_cycle: 0.0
             });
@@ -116,7 +116,15 @@ impl HTMLayer {
                 neighbors.iter().for_each(|&i| if overlap[i] > 0. { local_overlap.push(overlap[i]); });
                 local_overlap.sort_by(|a, b| a.partial_cmp(b).unwrap()); // Can't sort floats.
 
-                local_overlap[local_overlap.len() - self.num_active_columns_per_inhibition_area]
+                // I get 0 active columns, if I run twice.
+                if local_overlap.len() == 0 {
+                    0.0
+                } else if local_overlap.len() < self.num_active_columns_per_inhibition_area {
+                    local_overlap[0]
+                } else {
+                    let idx = (local_overlap.len() as i32- self.num_active_columns_per_inhibition_area as i32).abs() as usize;
+                    local_overlap[idx]
+                }
             };
 
             if overlap[i] > self.stimulus_threshold  && overlap[i] > min_local_activity {
@@ -132,9 +140,6 @@ impl HTMLayer {
     }
 
     fn spatial_pooling_learning(&mut self, sp_output: &BitVec, overlap: Vec<f32>) {
-        let active_columns: Box<BitVec> = Box::new(sp_output.iter()
-            .filter(|active| *active)
-            .collect());
         let columns_indices: Box<Vec<usize>> = Box::new(sp_output.iter()
             .enumerate()
             .map(|(i, _)| i)
@@ -163,15 +168,15 @@ impl HTMLayer {
 
         }
 
-        self.update_active_duty_cycle(*active_columns);
+        self.update_active_duty_cycle(sp_output);
         self.update_overlap_duty_cycle(overlap);
-        
+
         for i in columns_indices.into_iter() {
             let neighbor_mean_active_duty_cycle = {
                 let i_neighbors_duty_cycles = self.neighors(i).iter()
                     .map(|&i_neighbor_index| self.columns[i_neighbor_index].active_duty_cycle)
                     .collect::<Vec<f32>>();
-                
+
                 i_neighbors_duty_cycles.iter().sum::<f32>() / i_neighbors_duty_cycles.len() as f32
             };
 
@@ -208,7 +213,7 @@ impl HTMLayer {
         neighbors_indices
     }
 
-    fn update_active_duty_cycle(&mut self, active_columns: BitVec) {
+    fn update_active_duty_cycle(&mut self, active_columns: &BitVec) {
         for i in 0..self.columns.len() {
             self.columns[i].active_duty_cycle = (self.columns[i].active_duty_cycle * (self.period - 1) as f32 + active_columns[i] as u8 as f32) / self.period as f32;
         }
