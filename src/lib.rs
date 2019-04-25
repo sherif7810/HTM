@@ -1,5 +1,5 @@
 use bit_vec::BitVec;
-use rand::seq::SliceRandom;
+use std::cmp;
 
 /// Hierarchical temporal memory (HTM) layer.
 pub struct HTMLayer {
@@ -54,14 +54,18 @@ impl HTMLayer {
         assert!(period >= 1);
         assert!(inhibition_radius > num_active_columns_per_inhibition_area);
 
+        // Attempt to scale `potential_radius` to cover all input.
+        let potential_radius = potential_radius * input_length / columns_length;
         // Initialize columns with
         // `potential_radius` random connections.
         // 0.5 permanence and boost.
         let mut columns = Vec::new();
 
-        for _ in 0..columns_length {
-            let connected_synapses = (0..input_length).collect::<Vec<usize>>()
-                .choose_multiple(&mut rand::thread_rng(), potential_radius)
+        for i in 0..columns_length {
+            let min = cmp::min(0, i as i32- potential_radius as i32) as usize;
+            let max = cmp::max(i + potential_radius, input_length);
+
+            let connected_synapses = (min..max).collect::<Vec<usize>>().iter()
                 .zip(vec![0.5; potential_radius])
                 .map(|(&synapse_i, p)| (synapse_i, p))
                 .collect::<Vec<(usize, f32)>>();
