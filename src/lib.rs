@@ -1,5 +1,6 @@
 use bit_vec::BitVec;
 use std::cmp;
+use std::num::NonZeroU32;
 
 /// Hierarchical temporal memory (HTM) layer.
 pub struct HTMLayer {
@@ -19,7 +20,7 @@ pub struct HTMLayer {
 
     stimulus_threshold: f32,
 
-    period: i32,
+    period: NonZeroU32,
     min_overlap_duty_cycle: f32
 
 }
@@ -48,10 +49,9 @@ impl HTMLayer {
 
                stimulus_threshold: f32,
 
-               period: i32,
+               period: NonZeroU32,
                min_overlap_duty_cycle: f32) -> Self {
 
-        assert!(period >= 1);
         assert!(inhibition_radius > num_active_columns_per_inhibition_area);
 
         // Attempt to scale `potential_radius` to cover all input.
@@ -72,7 +72,7 @@ impl HTMLayer {
 
             columns.push(Column {
                 connected_synapses,
-                boost: 0.9,
+                boost: 10.0,
                 active_duty_cycle: 0.0,
                 overlap_duty_cycle: 0.0
             });
@@ -98,6 +98,7 @@ impl HTMLayer {
             min_overlap_duty_cycle
         }
     }
+
     pub fn spatial_pooling_output(&mut self, input: &BitVec) -> BitVec {
         // Overlap
         let mut overlap = Vec::new();
@@ -126,7 +127,7 @@ impl HTMLayer {
                 } else if local_overlap.len() < self.num_active_columns_per_inhibition_area {
                     local_overlap[0]
                 } else {
-                    let idx = (local_overlap.len() as i32- self.num_active_columns_per_inhibition_area as i32).abs() as usize;
+                    let idx = cmp::max(0, local_overlap.len() as i32 - self.num_active_columns_per_inhibition_area as i32) as usize;
                     local_overlap[idx]
                 }
             };
@@ -150,7 +151,7 @@ impl HTMLayer {
             .collect());
         let active_columns_indices: Box<Vec<usize>> = Box::new(sp_output.iter()
             .enumerate()
-            .filter(|(_, active)| *active)
+            .filter(|(_, active)| *active) // Its value is either `true` (active) or `false` (inactive).
             .map(|(i, _)| i)
             .collect());
 
@@ -219,13 +220,13 @@ impl HTMLayer {
 
     fn update_active_duty_cycle(&mut self, active_columns: &BitVec) {
         for i in 0..self.columns.len() {
-            self.columns[i].active_duty_cycle = (self.columns[i].active_duty_cycle * (self.period - 1) as f32 + active_columns[i] as u8 as f32) / self.period as f32;
+            self.columns[i].active_duty_cycle = (self.columns[i].active_duty_cycle * (self.period.get() - 1) as f32 + active_columns[i] as u8 as f32) / self.period.get() as f32;
         }
     }
 
     fn update_overlap_duty_cycle(&mut self, overlap: Vec<f32>) {
         for i in 0..self.columns.len() {
-            self.columns[i].overlap_duty_cycle = (self.columns[i].overlap_duty_cycle * (self.period - 1) as f32 + overlap[i]) / self.period as f32;
+            self.columns[i].overlap_duty_cycle = (self.columns[i].overlap_duty_cycle * (self.period.get() - 1) as f32 + overlap[i]) / self.period.get() as f32;
         }
     }
 }
