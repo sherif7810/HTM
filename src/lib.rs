@@ -139,12 +139,12 @@ impl HTMLayer {
             }
         }
 
-        self.spatial_pooling_learning(&active_columns, overlap);
+        self.spatial_pooling_learning(&active_columns, overlap.as_slice());
 
         active_columns
     }
 
-    fn spatial_pooling_learning(&mut self, sp_output: &BitVec, overlap: Vec<f32>) {
+    fn spatial_pooling_learning(&mut self, sp_output: &BitVec, overlap: &[f32]) {
         let columns_indices: Box<Vec<usize>> = Box::new(sp_output.iter()
             .enumerate()
             .map(|(i, _)| i)
@@ -224,7 +224,7 @@ impl HTMLayer {
         }
     }
 
-    fn update_overlap_duty_cycle(&mut self, overlap: Vec<f32>) {
+    fn update_overlap_duty_cycle(&mut self, overlap: &[f32]) {
         for i in 0..self.columns.len() {
             self.columns[i].overlap_duty_cycle = (self.columns[i].overlap_duty_cycle * (self.period.get() - 1) as f32 + overlap[i]) / self.period.get() as f32;
         }
