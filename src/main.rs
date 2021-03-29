@@ -13,7 +13,7 @@ fn main() {
         ip.push(true);
     }
 
-    let mut my_layer = HTMLayer::new(ip.len(), 2048,
+    let mut my_layer = HTMLayer::<2048>::new(ip.len(),
                                  8, 10, 10,
                                  2.0, 8.0, 2.0,
                                  1.0,

@@ -1,17 +1,17 @@
 use bit_vec::BitVec;
 use std::cmp;
 use std::num::NonZeroU32;
+use std::convert::TryInto;
 
 /// Hierarchical temporal memory (HTM) layer.
-pub struct HTMLayer {
+pub struct HTMLayer<const COLUMNS: usize> {
     input_length: usize,
-    columns_length: usize,
     /// Global inhibition.
     num_active_columns_per_inhibition_area: usize,
     /// Local inhibition.
     inhibition_radius: usize,
 
-    columns: Vec<Column>,
+    columns: [Column; COLUMNS],
     potential_radius: usize,
 
     permanence_threshold: f32,
@@ -27,6 +27,7 @@ pub struct HTMLayer {
 
 /// A cortical column.
 /// It connects to `HTMLayer`'s input with `potential_radius` synapses.
+#[derive(Debug)]
 struct Column {
     /// Each synapse has a permanence value.
     connected_synapses: Vec<(usize, f32)>,
@@ -37,8 +38,8 @@ struct Column {
     overlap_duty_cycle: f32
 }
 
-impl HTMLayer {
-    pub fn new(input_length: usize, columns_length: usize,
+impl<const COLUMNS: usize> HTMLayer<COLUMNS> {
+    pub fn new(input_length: usize,
                num_active_columns_per_inhibition_area: usize,
                inhibition_radius: usize,
 
@@ -55,13 +56,12 @@ impl HTMLayer {
         assert!(inhibition_radius > num_active_columns_per_inhibition_area);
 
         // Attempt to scale `potential_radius` to cover all input.
-        let potential_radius = potential_radius * input_length / columns_length;
+        let potential_radius = potential_radius * input_length / COLUMNS;
         // Initialize columns with
         // `potential_radius` random connections.
         // 0.5 permanence and boost.
-        let mut columns = Vec::new();
 
-        for i in 0..columns_length {
+        let columns = (0..COLUMNS).map(|i| {
             let min = cmp::min(0, i as i32- potential_radius as i32) as usize;
             let max = cmp::max(i + potential_radius, input_length);
 
@@ -70,18 +70,16 @@ impl HTMLayer {
                 .map(|(&synapse_i, p)| (synapse_i, p))
                 .collect::<Vec<(usize, f32)>>();
 
-            columns.push(Column {
+            Column {
                 connected_synapses,
                 boost: 10.0,
                 active_duty_cycle: 0.0,
                 overlap_duty_cycle: 0.0
-            });
-        }
-
+            }
+        }).collect::<Vec<Column>>().try_into().unwrap();
 
         Self {
             input_length,
-            columns_length,
             num_active_columns_per_inhibition_area,
             inhibition_radius,
 
@@ -102,7 +100,7 @@ impl HTMLayer {
     pub fn spatial_pooling_output(&mut self, input: &BitVec) -> BitVec {
         // Overlap
         let mut overlap = Vec::new();
-        for i in 0..self.columns_length {
+        for i in 0..COLUMNS {
             overlap.push(0.);
             for (input_bit_index, _) in &self.columns[i].connected_synapses {
                 if input[*input_bit_index] == true { overlap[i] += 1.; }
@@ -112,7 +110,7 @@ impl HTMLayer {
 
         // Winning columns after inhibition
         let mut active_columns = BitVec::new();
-        for i in 0..self.columns_length {
+        for i in 0..COLUMNS {
             let min_local_activity = {
                 let neighbors = self.neighors(i);
 
@@ -209,8 +207,8 @@ impl HTMLayer {
             } else { i - self.inhibition_radius }
         };
         let rng_max = {
-            if i + self.inhibition_radius >= self.columns_length {
-                self.columns_length - 1
+            if i + self.inhibition_radius >= COLUMNS {
+                COLUMNS - 1
             } else { i + self.inhibition_radius }
         };
         neighbors_indices.append(&mut (rng_min..i).collect::<Vec<usize>>());
@@ -219,13 +217,13 @@ impl HTMLayer {
     }
 
     fn update_active_duty_cycle(&mut self, active_columns: &BitVec) {
-        for i in 0..self.columns.len() {
+        for i in 0..COLUMNS {
             self.columns[i].active_duty_cycle = (self.columns[i].active_duty_cycle * (self.period.get() - 1) as f32 + active_columns[i] as u8 as f32) / self.period.get() as f32;
         }
     }
 
     fn update_overlap_duty_cycle(&mut self, overlap: &[f32]) {
-        for i in 0..self.columns.len() {
+        for i in 0..COLUMNS {
             self.columns[i].overlap_duty_cycle = (self.columns[i].overlap_duty_cycle * (self.period.get() - 1) as f32 + overlap[i]) / self.period.get() as f32;
         }
     }
