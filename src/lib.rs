@@ -112,7 +112,7 @@ impl<const COLUMNS: usize> HTMLayer<COLUMNS> {
         let mut active_columns = BitVec::new();
         for i in 0..COLUMNS {
             let min_local_activity = {
-                let neighbors = self.neighors(i);
+                let neighbors = self.neighbors(i);
 
                 // kthScore
                 let mut local_overlap = Vec::new();
@@ -176,7 +176,7 @@ impl<const COLUMNS: usize> HTMLayer<COLUMNS> {
 
         for i in columns_indices.into_iter() {
             let neighbor_mean_active_duty_cycle = {
-                let i_neighbors_duty_cycles = self.neighors(i).iter()
+                let i_neighbors_duty_cycles = self.neighbors(i).iter()
                     .map(|&i_neighbor_index| self.columns[i_neighbor_index].active_duty_cycle)
                     .collect::<Vec<f32>>();
 
@@ -199,7 +199,7 @@ impl<const COLUMNS: usize> HTMLayer<COLUMNS> {
         }
     }
 
-    fn neighors(&self, i: usize) -> Vec<usize> {
+    fn neighbors(&self, i: usize) -> Vec<usize> {
         let mut neighbors_indices = Vec::new();
         let rng_min = {
             if (i as i32 - self.inhibition_radius as i32) < 0 {
